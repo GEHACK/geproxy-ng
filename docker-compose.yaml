@@ -1,0 +1,39 @@
+services:
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx:/etc/nginx/certs
+    ports:
+      - "80:80"
+      - "443:443"
+
+  acng:
+    image: sameersbn/apt-cacher-ng:3.3-20200524
+    volumes:
+      - acng:/var/cache/apt-cacher-ng
+    restart: always
+    ports:
+      - "${PRIVATE_IP:?PRIVATE_IP is required since it changes too much between setups!}:${ACNG_PORT:-3142}:3142"
+
+  #  pixie:
+  devdocs:
+    image: devdocs
+    build:
+      dockerfile: ./devdocs.Dockerfile
+      args:
+        languages: "${LANGUAGES:-'openjdk@17 c cpp python@3.10'}"
+
+  dnsmasq:
+    image: dnsmasq
+    build:
+      dockerfile: ./dnsmasq.Dockerfile
+      args:
+        PRIVATE_IP: "${PRIVATE_IP:?PRIVATE_IP is required since it changes too much between setups!}"
+        PRINTER_MAC: "${PRINTER_MAC:-aa:bb:cc:dd:ee:ff}"
+        FORCED_LEASES: "${FORCED_LEASES}"
+
+    volumes:
+      - ./dnsmasq.conf:/dnsmasq.conf
+
+volumes:
+  acng:
