@@ -2,10 +2,20 @@ services:
   nginx:
     image: nginx:latest
     volumes:
-      - ./nginx:/etc/nginx/certs
+      - ./nginx/configure.sh:/docker-entrypoint.d/99-geproxy-config.sh
+      - ./nginx/conf.d:/etc/nginx/templates
+      - ./nginx/ssl:/etc/nginx/ssl
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      - DOMJUDGE_REMOTE=${DOMJUDGE_URL:-judge.gehack.nl}
+      - CONTEST_HASH=${CONTEST_HASH:-contest_hash}
+      - SSL_CERT_LOC=${SSL_CERT_LOC}
+      - SSL_KEY_LOC=${SSL_KEY_LOC}
+      - DOMAIN=${DOMAIN:-progcont}
+    cap_add:
+      - NET_ADMIN
 
   acng:
     image: sameersbn/apt-cacher-ng:3.3-20200524
@@ -18,22 +28,28 @@ services:
   #  pixie:
   devdocs:
     image: devdocs
+    depends_on:
+      - nginx
     build:
       dockerfile: ./devdocs.Dockerfile
       args:
         languages: "${LANGUAGES:-'openjdk@17 c cpp python@3.10'}"
 
-  dnsmasq:
-    image: dnsmasq
-    build:
-      dockerfile: ./dnsmasq.Dockerfile
-      args:
-        PRIVATE_IP: "${PRIVATE_IP:?PRIVATE_IP is required since it changes too much between setups!}"
-        PRINTER_MAC: "${PRINTER_MAC:-aa:bb:cc:dd:ee:ff}"
-        FORCED_LEASES: "${FORCED_LEASES}"
 
-    volumes:
-      - ./dnsmasq.conf:/dnsmasq.conf
+#  dnsmasq:
+#    image: dnsmasq
+#    cap_add:
+#      - NET_ADMIN
+#    build:
+#      dockerfile: ./dnsmasq.Dockerfile
+#      args:
+#        PRIVATE_IP: "${PRIVATE_IP:?PRIVATE_IP is required since it changes too much between setups!}"
+#        PRINTER_MAC: "${PRINTER_MAC:-aa:bb:cc:dd:ee:ff}"
+#        FORCED_LEASES: "${FORCED_LEASES}"
+#
+#    volumes:
+#      - ./dnsmasq.conf:/dnsmasq.conf
+#      - ./leases:/usr/shar/dnsmasq/leases
 
 volumes:
   acng:
