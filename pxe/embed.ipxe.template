@@ -1,0 +1,20 @@
+#!ipxe
+
+dhcp
+
+imgload http://10.1.0.1/vmlinuz
+initrd http://10.1.0.1/initrd
+
+menu
+item --key i installer    Boot Installer
+item exit         Continue
+choose --default exit --timeout 5000 target && goto ${target}
+
+:installer
+echo Attempt boot
+imgargs vmlinuz auto=true ip=dhcp cloud-config-url=/dev/null url=http://10.1.0.1/ubuntu.iso autoinstall ds=nocloud-net;s=http://10.1.0.1/ domain=progcont
+
+boot || goto exit
+
+:exit
+exit

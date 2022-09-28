@@ -5,6 +5,7 @@ services:
       - ./nginx/configure.sh:/docker-entrypoint.d/99-geproxy-config.sh
       - ./nginx/conf.d:/etc/nginx/templates
       - ./nginx/ssl:/etc/nginx/ssl
+      - ./pxe/html:/var/www/html
     ports:
       - "80:80"
       - "443:443"
@@ -52,6 +53,7 @@ services:
       - DOMAIN=${DOMAIN:-progcont}
     volumes:
       - ./dnsmasq.conf.template:/etc/dnsmasq.conf.template
+      - ./pxe:/pxe
       - ./dnsmasq.leases:/var/lib/misc/dnsmasq.leases
 
 volumes:

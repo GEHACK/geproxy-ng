@@ -1,0 +1,23 @@
+#cloud-config
+autoinstall:
+  version: 1
+  drivers:
+    install: true
+  proxy: http://_gateway:3142
+  identity:
+    hostname: team
+    password: $6$eRhJgbL/SaReg8dY$4mQX03i.7t4S27Od.iKy3Hq3rTtReQqAJB.i725W0vh4CUnFtD3NJ9PfxB9Kwn6biqKGv4s4eBihzNT7UvUM3.
+    realname: team
+    username: team
+  ssh:
+    allow-pw: false
+    authorized-keys:
+      - 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDqPaxdGUPIe4/t5o1P2Hh0I4RSFb97MrbBklkFtxZPFveS4KXJUc7lFhSWq+fTF1jWxtooHl1p6vQGSBG2pJLp+GUMo6a6a6COI071CdGbgbM8u7D5p4sUWD5TFdR9V24qNabbMTmbHbvUfZwwgL9IXGMICTPjyhuSNJ1xo8aZtbJSv1jEx59nm1AF3MTr+wCn9Iq3GZ5NqpTaj2YhyxUIaFCSqqzq+8GZ3Ar4rRXGvdCQKpAN7DJyLm07wPuh/h2Wm0BDwzBfgUfdDQ/kiPgBtYAC5WjgsPlVRf1ZvZNcS3bOPRbG2VSXdAY2W+dIaWaHvZHKoqSS5tFkna1XrDYJ
+      tuupke@github/9888766 # ssh-import-id gh:tuupke'
+      - 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILEOzt8eTyjBkQdtXJdhrmFoOVCIvdr+j6hJGPG+oCBS
+      tuupke@github/66855538 # ssh-import-id gh:tuupke'
+    install-server: true
+  power_state:
+    delay: 10
+    mode: reboot
+    message: Install done, bye bye
