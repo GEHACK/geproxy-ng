@@ -1,0 +1,140 @@
+---
+- name: Setup geproxy
+  gather_facts: true
+  hosts: all
+  become: yes
+  handlers:
+    - name: Restart systemd-resolved
+      ansible.builtin.service:
+        name: systemd-resolved
+        state: restarted
+  tasks:
+  - name: Remove old packages
+    ansible.builtin.apt:
+      state: absent
+      name:
+      - docker
+      - docker-engine
+      - docker.io
+      - containerd
+      - runc
+
+  - name: Install dependencies
+    ansible.builtin.apt:
+      state: present
+      name:
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+      - lshw
+      - rsync
+
+  - name: Add docker repo
+    block:
+    - name: Ensure key folder exists
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+
+    - name: APT key
+      ansible.builtin.apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Get DEB architecture
+      ansible.builtin.command: dpkg --print-architecture
+      register: deb_architecture
+
+    - name: APT source
+      ansible.builtin.apt_repository:
+        filename: docker
+        repo: "deb [arch={{ deb_architecture.stdout }}] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+
+  - name: Install docker
+    ansible.builtin.apt:
+      state: present
+      name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose-plugin
+      - docker-compose
+
+  - name: Add user to docker group
+    user:
+      name: '{{ ansible_user }}'
+      groups: docker
+      append: yes
+    when: ansible_user != "root"
+
+  - name: Create geproxy directory and set permissions
+    ansible.builtin.file:
+      path: /opt/geproxy
+      state: directory
+      owner: "{{ ansible_user }}"
+      group: docker
+      mode: u=rwx,g=rwx,o=r
+      recurse: yes
+
+  - name: Synchronize current directory
+    become: no
+    synchronize:
+      src: ./
+      dest: /opt/geproxy/
+      owner: no
+      group: no
+      delete: yes
+
+  - name: Change /opt/geproxy permissions to root
+    ansible.builtin.file:
+      path: /opt/geproxy
+      state: directory
+      owner: root
+      group: root
+      mode: u=rwx,g=rwx,o=r
+      recurse: yes
+
+  - name: Check if /etc/netplan/00-geproxy.yaml exists
+    stat:
+      path: /etc/netplan/00-geproxy.yaml
+    register: netplan
+
+  - name: Create netplan
+    block:
+      - name: Check which netplans to rename
+        find:
+          path: /etc/netplan
+          patterns: '*.yaml,*.yml'
+        register: cleanup
+        ignore_errors: true
+
+      - name: Rename old netplans
+        command: "mv '{{ item.path }}' '{{ item.path }}.{{ ansible_date_time.iso8601 }}.old'"
+        with_items: "{{ cleanup.files }}"
+        ignore_errors: true
+
+      - name: Construct netplan
+        ansible.builtin.shell: "/opt/geproxy/routing/generateNetplan.sh > /etc/netplan/00-geproxy.yaml"
+
+      - name: Generate netplan
+        ansible.builtin.command: "netplan generate"
+
+      - name: Apply netplan
+        ansible.builtin.command: "netplan apply"
+    when: not netplan.stat.exists
+
+  - name: Disable DNSStubListener
+    ansible.builtin.lineinfile:
+      path: /etc/systemd/resolved.conf
+      state: present
+      regexp: '^DNSStubListener\s*=\s*yes'
+      line: DNSStubListener=no
+    notify:
+      - Restart systemd-resolved
+
+  - name: Build the composition
+    ansible.builtin.command:
+      chdir: /opt/geproxy
+      cmd: docker-compose up -d

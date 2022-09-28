@@ -8,11 +8,13 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    depends_on:
+      - devdocs
     environment:
       - DOMJUDGE_REMOTE=${DOMJUDGE_URL:-judge.gehack.nl}
       - CONTEST_HASH=${CONTEST_HASH:-contest_hash}
-      - SSL_CERT_LOC=${SSL_CERT_LOC}
-      - SSL_KEY_LOC=${SSL_KEY_LOC}
+      - SSL_CERT_LOC=${SSL_CERT_LOC:-}
+      - SSL_KEY_LOC=${SSL_KEY_LOC:-}
       - DOMAIN=${DOMAIN:-progcont}
     cap_add:
       - NET_ADMIN
@@ -23,33 +25,34 @@ services:
       - acng:/var/cache/apt-cacher-ng
     restart: always
     ports:
-      - "${PRIVATE_IP:?PRIVATE_IP is required since it changes too much between setups!}:${ACNG_PORT:-3142}:3142"
+      - "${PRIVATE_IP:-10.1.0.1}:${ACNG_PORT:-3142}:3142"
 
   #  pixie:
   devdocs:
-    image: devdocs
-    depends_on:
-      - nginx
+    image: geproxy/devdocs
     build:
       dockerfile: ./devdocs.Dockerfile
+      context: ./
       args:
         languages: "${LANGUAGES:-'openjdk@17 c cpp python@3.10'}"
 
-
-#  dnsmasq:
-#    image: dnsmasq
-#    cap_add:
-#      - NET_ADMIN
-#    build:
-#      dockerfile: ./dnsmasq.Dockerfile
-#      args:
-#        PRIVATE_IP: "${PRIVATE_IP:?PRIVATE_IP is required since it changes too much between setups!}"
-#        PRINTER_MAC: "${PRINTER_MAC:-aa:bb:cc:dd:ee:ff}"
-#        FORCED_LEASES: "${FORCED_LEASES}"
-#
-#    volumes:
-#      - ./dnsmasq.conf:/dnsmasq.conf
-#      - ./leases:/usr/shar/dnsmasq/leases
+  dnsmasq:
+    image: geproxy/dnsmasq
+    cap_add:
+      - NET_ADMIN
+    build:
+      dockerfile: ./dnsmasq.Dockerfile
+      context: ./
+    network_mode: host
+    environment:
+      - PRINTER_MAC=${PRINTER_MAC:-aa:bb:cc:dd:ee:ff}
+      - PRIVATE_IP=${PRIVATE_IP:-10.1.0.1}
+      - FORCED_LEASES=${FORCED_LEASES}
+      - BIND_INTERFACE=${PRIVATE_INTERFACE:-lo}
+      - DOMAIN=${DOMAIN:-progcont}
+    volumes:
+      - ./dnsmasq.conf.template:/etc/dnsmasq.conf.template
+      - ./dnsmasq.leases:/var/lib/misc/dnsmasq.leases
 
 volumes:
   acng:
