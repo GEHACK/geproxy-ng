@@ -1,0 +1,31 @@
+---
+- name: Generate netplan
+  gather_facts: true
+  hosts: all
+  become: yes
+  tasks:
+    # Construct netplan by discovering the interfaces
+    - name: Discover public interface
+      ansible.builtin.shell: ip r | awk '/^default/ {print $5}'
+      register: public_interface_cmd
+
+    - name: Set public interface
+      ansible.builtin.set_fact:
+        public_interface: "{{ public_interface_cmd.stdout }}"
+
+    - name: Discover interfaces
+      ansible.builtin.shell: "lshw -class network | grep 'logical name' | grep -o '[^ ]*$' | sort -h"
+      register: all_interfaces_cmd
+
+    - name: Set all_interfaces
+      ansible.builtin.set_fact:
+        all_interfaces: "{{ all_interfaces_cmd.stdout_lines }}"
+
+    - name: Set private interfaces
+      ansible.builtin.set_fact:
+        private_interfaces: "{{ all_interfaces | difference([public_interface]) }}"
+
+    - name: Construct netplan
+      template:
+        src: ../netplan.j2
+        dest: /opt/geproxy/99-geproxy.yaml

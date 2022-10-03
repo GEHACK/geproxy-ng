@@ -1,0 +1,17 @@
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    {{ public_interface }}:
+      dhcp4: yes
+{% for interface in private_interfaces %}
+    {{ interface }}:
+      dhcp4: no
+{% endfor %}
+  bridges:
+    br-geproxy:
+      interfaces: [{{ private_interfaces | join(',') }}]
+      dhcp4: false
+      addresses: [10.1.0.1/16]
+      nameservers:
+        addresses: [1.1.1.1]
