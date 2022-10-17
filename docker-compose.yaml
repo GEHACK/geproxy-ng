@@ -28,7 +28,17 @@ services:
     ports:
       - "${PRIVATE_IP:-10.1.0.1}:${ACNG_PORT:-3142}:3142"
 
-  #  pixie:
+  pixie:
+    image: tuupke/pixie
+    volumes:
+      - ./pixie:/geproxy
+    environment:
+      - DB_DSN=/geproxy/pixie.sqlite?cache=shared&mode=rwc
+    restart: always
+    ports:
+      - "${PRIVATE_IP:-10.1.0.1}:5353:5353/udp"
+      - "${PRIVATE_IP:-10.1.0.1}:631:631"
+
   devdocs:
     image: geproxy/devdocs
     build:

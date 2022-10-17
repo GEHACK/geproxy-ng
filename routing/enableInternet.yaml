@@ -1,6 +1,6 @@
 ---
-- name: Disable internet
-  gather_facts: true
+- name: Enable internet
+  gather_facts: false
   hosts: all
   become: yes
   handlers:
@@ -15,35 +15,9 @@
       notify:
         - Apply sysctl config
   tasks:
-
-    #  iptables -A FORWARD -i $PRIVATE_INTERFACE -o $PUBLIC_INTERFACE -j ACCEPT
-    #  iptables -A FORWARD -i  $PUBLIC_INTERFACE -o $PRIVATE_INTERFACE -m state --state RELATED,ESTABLISHED -j ACCEPT
-    #  iptables -t nat -A POSTROUTING -o $PUBLIC_INTERFACE -j MASQUERADE
-    - name: Forward private -> public
-      iptables:
-        chain: FORWARD
-        in_interface: {{ PRIVATE_INTERFACE }}
-        out_interface: {{ PUBLIC_INTERFACE }}
-        jump: ACCEPT
-      notify: Start ip-forwarding in /etc/sysctl.conf
-
-    - name: Forward public -> private
-      iptables:
-        chain: FORWARD
-        in_interface: {{ PUBLIC_INTERFACE }}
-        out_interface: {{ PRIVATE_INTERFACE }}
-        jump: ACCEPT
-        match: state
-        ctstate:
-          - RELATED
-          - ESTABLISHED
-      notify: Start ip-forwarding in /etc/sysctl.conf
-
     - name: Enable nat
-      iptables:
+      ansible.builtin.iptables:
         table: nat
         chain: POSTROUTING
-        out_interface: ''
         jump: MASQUERADE
-        comment: ''
       notify: Start ip-forwarding in /etc/sysctl.conf

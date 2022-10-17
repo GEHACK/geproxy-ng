@@ -1,12 +1,11 @@
 ---
 - name: Disable internet
-  gather_facts: true
+  gather_facts: false
   hosts: all
   become: yes
   handlers:
     - name: Apply sysctl config
       ansible.builtin.command: "sysctl -p"
-  tasks:
     - name: Stop ip-forwarding in /etc/sysctl.conf
       ansible.builtin.lineinfile:
         path: /etc/sysctl.conf
@@ -15,3 +14,11 @@
         line: net.ipv4.ip_forward=0
       notify:
         - Apply sysctl config
+  tasks:
+    - name: Disable nat
+      ansible.builtin.iptables:
+        state: absent
+        table: nat
+        chain: POSTROUTING
+        jump: MASQUERADE
+      notify: Start ip-forwarding in /etc/sysctl.conf

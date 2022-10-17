@@ -199,4 +199,4 @@
       weekday: "*"
       hour: "*"
       minute: "*"
-      job: "/usr/bin/curl https://deviceregistry.tuupke.nl/?h=$(hostname) --insecure > /dev/null 2> /dev/null"
+      job: "/usr/bin/curl https://gehack.nl/deviceregistry/?h=$(hostname) --insecure > /dev/null 2> /dev/null"
