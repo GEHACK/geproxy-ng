@@ -1,5 +1,6 @@
 log-queries
 log-dhcp
+log-facility=/dev/stdout
 
 interface=${BIND_INTERFACE}
 listen-address=${PRIVATE_IP}

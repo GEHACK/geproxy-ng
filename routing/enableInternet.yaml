@@ -17,6 +17,7 @@
   tasks:
     - name: Enable nat
       ansible.builtin.iptables:
+        state: present
         table: nat
         chain: POSTROUTING
         jump: MASQUERADE

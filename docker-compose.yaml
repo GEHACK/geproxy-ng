@@ -30,15 +30,20 @@ services:
 
   pixie:
     image: tuupke/pixie
+    cap_add:
+      - NET_ADMIN
     volumes:
       - ./pixie:/geproxy
+    network_mode: host
     environment:
       - DB_DSN=/geproxy/pixie.sqlite?cache=shared&mode=rwc
+      - IPP_PRINTER_URL=127.0.0.1:631/printers/tue
+      - "CUPS_ADDR=${PRIVATE_IP:-10.1.0.1}:6631"
+      - LISTEN_ADDR=127.0.0.1:4000
     restart: always
-    ports:
-      - "${PRIVATE_IP:-10.1.0.1}:5353:5353/udp"
-      - "${PRIVATE_IP:-10.1.0.1}:631:631"
-
+#    ports:
+#      - "${PRIVATE_IP:-10.1.0.1}:5353:5353/udp"
+#      - "${PRIVATE_IP:-10.1.0.1}:6631:631"
   devdocs:
     image: geproxy/devdocs
     build:
