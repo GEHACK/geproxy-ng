@@ -2,19 +2,19 @@
 
 dhcp
 
-imgload http://10.1.0.1/vmlinuz
-initrd http://10.1.0.1/initrd
-
 menu
 item --key i installer    Boot Installer
 item exit         Continue
 choose --default exit --timeout 5000 target && goto ${target}
 
 :installer
-echo Attempt boot
-imgargs vmlinuz auto=true ip=dhcp cloud-config-url=/dev/null url=http://10.1.0.1/ubuntu.iso autoinstall ds=nocloud-net;s=http://10.1.0.1/ domain=progcont
-
-boot || goto exit
+set server_ip cloud-init
+set nfs_path /ubuntu
+kernel http://${server_ip}${nfs_path}/casper/hwe-vmlinuz initrd=hwe-initrd autoinstall root=/dev/ram0 ramdisk_size=1500000 boot=casper url=http://${server_ip}/ubuntu.iso net.ifnames=0 biosdevname=0 ip=dhcp domain=${DOMAIN} ds=nocloud-net;s=http://cloud-init/
+initrd http://${server_ip}${nfs_path}/casper/hwe-initrd
+boot || goto shell
 
 :exit
 exit
+
+:shell

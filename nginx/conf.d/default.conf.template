@@ -1,0 +1,9 @@
+server {
+
+    include listen;
+
+    server_name cloud-init cloud-init.${DOMAIN};
+    add_header Access-Control-Allow-Origin *;
+
+    root /var/www/html;
+}

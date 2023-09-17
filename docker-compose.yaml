@@ -5,12 +5,16 @@ services:
       - ./nginx/configure.sh:/docker-entrypoint.d/99-geproxy-config.sh
       - ./nginx/conf.d:/etc/nginx/templates
       - ./nginx/ssl:/etc/nginx/ssl
-      - ./pxe/html:/var/www/html
+      - ./pxe:/var/www/html
     ports:
       - "80:80"
       - "443:443"
     depends_on:
       - devdocs
+      - pixie
+    links:
+      - devdocs
+      - pixie
     environment:
       - DOMJUDGE_REMOTE=${DOMJUDGE_URL:-judge.gehack.nl}
       - CONTEST_HASH=${CONTEST_HASH:-contest_hash}
@@ -23,7 +27,7 @@ services:
   acng:
     image: sameersbn/apt-cacher-ng:3.3-20200524
     volumes:
-      - acng:/var/cache/apt-cacher-ng
+      - ./acng:/var/cache/apt-cacher-ng
     restart: always
     ports:
       - "${PRIVATE_IP:-10.1.0.1}:${ACNG_PORT:-3142}:3142"
@@ -34,21 +38,19 @@ services:
       - NET_ADMIN
     volumes:
       - ./pixie:/geproxy
-    network_mode: host
+    ports:
+      - ${PRIVATE_IP:-10.1.0.1}:5353:5353/udp
     environment:
       - DB_DSN=/geproxy/pixie.sqlite?cache=shared&mode=rwc
-      - IPP_PRINTER_URL=127.0.0.1:631/printers/tue
       - "CUPS_ADDR=${PRIVATE_IP:-10.1.0.1}:6631"
       - LISTEN_ADDR=127.0.0.1:4000
     restart: always
-#    ports:
-#      - "${PRIVATE_IP:-10.1.0.1}:5353:5353/udp"
-#      - "${PRIVATE_IP:-10.1.0.1}:6631:631"
+
   devdocs:
     image: geproxy/devdocs
     build:
       dockerfile: ./devdocs.Dockerfile
-      context: ./
+      context: /tmp
       args:
         languages: "${LANGUAGES:-'openjdk@17 c cpp python@3.10'}"
 
@@ -63,7 +65,6 @@ services:
     environment:
       - PRINTER_MAC=${PRINTER_MAC:-aa:bb:cc:dd:ee:ff}
       - PRIVATE_IP=${PRIVATE_IP:-10.1.0.1}
-      - FORCED_LEASES=${FORCED_LEASES}
       - BIND_INTERFACE=${PRIVATE_INTERFACE:-lo}
       - DOMAIN=${DOMAIN:-progcont}
     volumes:
@@ -71,5 +72,40 @@ services:
       - ./pxe:/pxe
       - ./dnsmasq.leases:/var/lib/misc/dnsmasq.leases
 
-volumes:
-  acng:
+  user-data:
+    image: alpine/curl
+    volumes:
+    - ./pxe:/pxe
+    environment: 
+      - MACHINE_HOSTNAME=${MACHINE_HOSTNAME:-}
+      - MACHINE_PASSWORD=${MACHINE_PASSWORD:-$2a$12$6EyKyPDuHQcHIF7Abawva.pCLQhGs0r/3NybeiMVgaKTDPbm.a7b6}
+      - MACHINE_USERNAME=${MACHINE_USERNAME:-}
+      - GITHUB_USERNAMES=${GITHUB_USERNAMES:-tuupke}
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -o pipefail && 
+        cat<<EOT>/pxe/user-data
+        #cloud-config
+        autoinstall:
+          version: 1
+          drivers:
+            install: true
+          proxy: http://_gateway:3142
+          kernel:
+            flavor: hwe
+          power_state:
+            mode: reboot
+            message: Install done, bye bye
+          identity:
+            hostname: $${MACHINE_HOSTNAME:-machine}
+            password: $${MACHINE_PASSWORD}
+            realname: $${MACHINE_USERNAME:-admin}
+            username: $${MACHINE_USERNAME:-admin}
+          ssh:
+            allow-pw: false
+            install-server: true
+            authorized-keys: 
+        $$(echo "$$GITHUB_USERNAMES" | tr "," "\n" | (xargs -I{} curl -Sf https://github.com/{}.keys | sed -e 's/^/    - /'))
+        EOT
