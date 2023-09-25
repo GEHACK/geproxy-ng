@@ -42,7 +42,7 @@ services:
       - ${PRIVATE_IP:-10.1.0.1}:5353:5353/udp
     environment:
       - DB_DSN=/geproxy/pixie.sqlite?cache=shared&mode=rwc
-      - "CUPS_ADDR=${PRIVATE_IP:-10.1.0.1}:6631"
+      - "CUPS_ADDR=${PRIVATE_IP:-10.1.0.1}:631"
       - LISTEN_ADDR=127.0.0.1:4000
     restart: always
 
