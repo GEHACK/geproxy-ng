@@ -38,6 +38,7 @@
   - name: Install dependencies
     tags: prepare
     ansible.builtin.apt:
+      update_cache: yes
       state: present
       name:
       - ca-certificates
