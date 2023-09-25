@@ -49,8 +49,8 @@ services:
   devdocs:
     image: geproxy/devdocs
     build:
-      dockerfile: ./devdocs.Dockerfile
-      context: /tmp
+      dockerfile: ./Dockerfile
+      context: ./devdocs
       args:
         languages: "${LANGUAGES:-'openjdk@17 c cpp python@3.10'}"
 
@@ -59,8 +59,8 @@ services:
     cap_add:
       - NET_ADMIN
     build:
-      dockerfile: ./dnsmasq.Dockerfile
-      context: ./
+      dockerfile: ./Dockerfile
+      context: ./dnsmasq
     network_mode: host
     environment:
       - PRINTER_MAC=${PRINTER_MAC:-aa:bb:cc:dd:ee:ff}
@@ -68,9 +68,9 @@ services:
       - BIND_INTERFACE=${PRIVATE_INTERFACE:-lo}
       - DOMAIN=${DOMAIN:-progcont}
     volumes:
-      - ./dnsmasq.conf.template:/etc/dnsmasq.conf.template
+      - ./dnsmasq/dnsmasq.conf.template:/etc/dnsmasq.conf.template
       - ./pxe:/pxe
-      - ./dnsmasq.leases:/var/lib/misc/dnsmasq.leases
+      - ./dnsmasq/dnsmasq.leases:/var/lib/misc/dnsmasq.leases
 
   user-data:
     image: alpine/curl
