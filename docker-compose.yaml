@@ -17,7 +17,6 @@ services:
       - pixie
     environment:
       - DOMJUDGE_REMOTE=${DOMJUDGE_URL:-judge.gehack.nl}
-      - CONTEST_HASH=${CONTEST_HASH:-contest_hash}
       - SSL_CERT_LOC=${SSL_CERT_LOC:-}
       - SSL_KEY_LOC=${SSL_KEY_LOC:-}
       - DOMAIN=${DOMAIN:-progcont}
