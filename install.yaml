@@ -186,6 +186,11 @@
       dest: /opt/geproxy/pxe/ubuntu.iso
     notify: Create mountpoint
 
+  - name: Intialize submodules
+    ansible.builtin.command:
+      chdir: /opt/geproxy/
+      cmd: "git submodule update --init --recursive"
+
   - name: Generate embed.ipxe
     ansible.builtin.shell:
       chdir: /opt/geproxy/pxe
