@@ -8,7 +8,7 @@
       ansible.builtin.service:
         name: systemd-resolved
         state: restarted
-    
+
     - name: Create mountpoint
       ansible.builtin.file:
         state: directory
@@ -25,7 +25,6 @@
 
   tasks:
   - name: Remove old packages
-    tags: prepare
     ansible.builtin.apt:
       state: absent
       name:
@@ -36,7 +35,6 @@
       - runc
 
   - name: Install dependencies
-    tags: prepare
     ansible.builtin.apt:
       update_cache: yes
       state: present
@@ -56,33 +54,7 @@
       - mtools
       - gcc
 
-  # Needed to get the nfs server operational when apparmor is installed
-  # https://github.com/ehough/docker-nfs-server/blob/develop/doc/feature/apparmor.md
-  - name: Check for apparmor
-    tags: prepare, nfs
-    register: apparmor
-    ignore_errors: yes
-    ansible.builtin.command: "apparmor_status"
-
-  - name: Install apparmor-utils to setup apparmor
-    tags: prepare, nfs
-    ansible.builtin.apt:
-      state: present
-      name:
-      - apparmor-utils
-    when: apparmor is not failed
-
-  - name: Install a lxc package; just for the lxc apparmor policy ...
-    tags: prepare, nfs
-    ansible.builtin.apt:
-      state: present
-      install_recommends: no
-      name:
-      - liblxc-common
-    when: apparmor is not failed
-
   - name: Add docker repo
-    tags: prepare
     block:
     - name: Ensure key folder exists
       ansible.builtin.file:
@@ -105,7 +77,6 @@
         state: present
 
   - name: Install docker
-    tags: prepare
     ansible.builtin.apt:
       state: present
       name:
@@ -116,7 +87,6 @@
       - docker-compose
 
   - name: Add user to docker group
-    tags: prepare
     user:
       name: '{{ ansible_user }}'
       groups: docker
@@ -124,7 +94,6 @@
     when: ansible_user != "root"
 
   - name: Create geproxy directory and set permissions
-    tags: sync, install
     ansible.builtin.file:
       path: /opt/geproxy
       state: directory
@@ -134,7 +103,6 @@
       recurse: yes
 
   - name: Synchronize current directory
-    tags: sync, install
     become: no
     synchronize:
       src: ./
@@ -142,13 +110,7 @@
       owner: no
       group: no
 
-  - name: Load apparmor profile for nfs
-    tags: prepare, nfs
-    ansible.builtin.command: apparmor_parser -r -W /opt/geproxy/pxe/apparmor-nfs
-    when: apparmor is not failed
-
   - name: Change /opt/geproxy permissions to root
-    tags: sync, install
     ansible.builtin.file:
       path: /opt/geproxy
       state: directory
@@ -158,13 +120,11 @@
       recurse: yes
 
   - name: Check if /etc/netplan/99-geproxy.yaml exists
-    tags: install
     ansible.builtin.stat:
       path: /etc/netplan/99-geproxy.yaml
     register: netplan
 
   - name: Create netplan
-    tags: install
     block:
       - name: Check which netplans to rename
         find:
@@ -212,7 +172,6 @@
     when: not netplan.stat.exists
 
   - name: Disable DNSStubListener
-    tags: install
     ansible.builtin.lineinfile:
       path: /etc/systemd/resolved.conf
       state: present
@@ -222,21 +181,12 @@
       - Restart systemd-resolved
 
   - name: Download ubuntu
-    tags: ubuntu
     ansible.builtin.get_url:
       url: https://releases.ubuntu.com/22.04.3/ubuntu-22.04.3-live-server-amd64.iso
       dest: /opt/geproxy/pxe/ubuntu.iso
     notify: Create mountpoint
 
-  - name: Enable NFS
-    tags: ipxe
-    ansible.builtin.lineinfile:
-      state: present
-      path: /opt/geproxy/ipxe/src/config/general.h
-      line: "#define	DOWNLOAD_PROTO_NFS"
-
   - name: Generate embed.ipxe
-    tags: ipxe
     ansible.builtin.shell:
       chdir: /opt/geproxy/pxe
       cmd: |
@@ -247,32 +197,17 @@
         envsubst '$PRIVATE_IP' < embed.ipxe.template > embed.ipxe
 
   - name: Build ipxe
-    tags: ipxe
     ansible.builtin.command:
       chdir: /opt/geproxy/ipxe/src
       cmd: make bin/undionly.kpxe EMBED=/opt/geproxy/pxe/embed.ipxe
 
   - name: Copy ipxe
-    tags: ipxe
     ansible.builtin.copy:
       src: /opt/geproxy/ipxe/src/bin/undionly.kpxe
       dest: /opt/geproxy/pxe
       remote_src: yes
 
-  # - name: Call deviceregistry
-  #   tags: cron
-  #   ansible.builtin.cron:
-  #     name: "Call deviceregistry"
-  #     cron_file: deviceregistry_update
-  #     month: "*"
-  #     day: "*"
-  #     weekday: "*"
-  #     hour: "*"
-  #     minute: "*"
-  #     job: "/usr/bin/curl https://gehack.nl/deviceregistry/?h=$(hostname) --insecure > /dev/null 2> /dev/null"
-
   - name: Build the composition
-    tags: install
     ansible.builtin.command:
       chdir: /opt/geproxy
       cmd: docker-compose up -d
