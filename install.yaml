@@ -16,6 +16,7 @@
       notify: Mount the ISO
 
     - name: Mount the ISO
+      become: no
       ansible.posix.mount:
         path: /opt/geproxy/pxe/ubuntu
         src: /opt/geproxy/pxe/ubuntu.iso
@@ -66,14 +67,14 @@
         url: https://download.docker.com/linux/ubuntu/gpg
         state: present
 
-    - name: Get DEB architecture
-      ansible.builtin.command: dpkg --print-architecture
-      register: deb_architecture
+#    - name: Get DEB architecture
+#      ansible.builtin.command: dpkg --print-architecture
+#      register: deb_architecture
 
     - name: APT source
       ansible.builtin.apt_repository:
         filename: docker
-        repo: "deb [arch={{ deb_architecture.stdout }}] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        repo: "deb https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
         state: present
 
   - name: Install docker
@@ -98,8 +99,7 @@
       path: /opt/geproxy
       state: directory
       owner: "{{ ansible_user }}"
-      group: docker
-      mode: u=rwx,g=rwx,o=rx
+      mode: u=rwx,g=rx,o=rx
       recurse: yes
 
   - name: Synchronize current directory
@@ -114,9 +114,7 @@
     ansible.builtin.file:
       path: /opt/geproxy
       state: directory
-      owner: root
-      group: root
-      mode: u=rwx,g=rwx,o=rx
+      owner: "{{ ansible_user }}"
       recurse: yes
 
   - name: Check if /etc/netplan/99-geproxy.yaml exists
@@ -127,7 +125,7 @@
   - name: Create netplan
     block:
       - name: Check which netplans to rename
-        find:
+        ansible.builtin.find:
           path: /etc/netplan
           patterns: '*.yaml,*.yml'
         register: cleanup
@@ -181,38 +179,59 @@
       - Restart systemd-resolved
 
   - name: Download ubuntu
+    become: no
     ansible.builtin.get_url:
       url: https://releases.ubuntu.com/22.04.3/ubuntu-22.04.3-live-server-amd64.iso
       dest: /opt/geproxy/pxe/ubuntu.iso
     notify: Create mountpoint
 
-  - name: Intialize submodules
+  - name: Check for submodule ipxe
+    become: no
+    ansible.builtin.stat:
+      path: /opt/geproxy/ipxe/src
+    register: ipxeFound
+
+  - name: Initialise submodule ipxe
+    become: no
     ansible.builtin.command:
       chdir: /opt/geproxy/
-      cmd: "git submodule update --init --recursive"
+      cmd: "git submodule update --init --recursive ipxe"
+    when: not ipxeFound.stat.exists
 
-  - name: Generate embed.ipxe
-    ansible.builtin.shell:
-      chdir: /opt/geproxy/pxe
-      cmd: |
-        set -a
-        source ../.env
-        set +a
-        
-        envsubst '$PRIVATE_IP' < embed.ipxe.template > embed.ipxe
+  - name: Generate bootloader
+    become: no
+    block:
+    - name: Check for built bootloader
+      ansible.builtin.stat:
+        path: /opt/geproxy/ipxe/src/bin/undionly.kpxe
+      register: ipxeBuilt
 
-  - name: Build ipxe
-    ansible.builtin.command:
-      chdir: /opt/geproxy/ipxe/src
-      cmd: make bin/undionly.kpxe EMBED=/opt/geproxy/pxe/embed.ipxe
+    - name: Generate bootloader script embed.ipxe
+      ansible.builtin.shell:
+        chdir: /opt/geproxy/pxe
+        cmd: |
+          set -a
+          source ../.env
+          set +a
+          
+          envsubst '$PRIVATE_IP' < embed.ipxe.template > embed.ipxe
+      when: not ipxeBuilt.stat.exists
 
-  - name: Copy ipxe
-    ansible.builtin.copy:
-      src: /opt/geproxy/ipxe/src/bin/undionly.kpxe
-      dest: /opt/geproxy/pxe
-      remote_src: yes
+    - name: Generate bootloader
+      ansible.builtin.command:
+        chdir: /opt/geproxy/ipxe/src
+        cmd: make bin/undionly.kpxe EMBED=/opt/geproxy/pxe/embed.ipxe
+      when: not ipxeBuilt.stat.exists
+
+    - name: Copy bootloader to location
+      ansible.builtin.copy:
+        src: /opt/geproxy/ipxe/src/bin/undionly.kpxe
+        dest: /opt/geproxy/pxe
+        remote_src: yes
+      when: not ipxeBuilt.stat.exists
 
   - name: Build the composition
+    become: no
     ansible.builtin.command:
       chdir: /opt/geproxy
-      cmd: docker-compose up -d
+      cmd: docker-compose up -d --wait
