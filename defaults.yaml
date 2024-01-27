@@ -1,0 +1,22 @@
+private_cidr: 10.1.0.1/16
+leases_min_start: 100
+private_interface: br-geproxy
+dns_resolver: 1.1.1.1
+static_macs: []
+
+domain: progcont
+
+machine_hostname: machine
+machine_username: admin
+machine_password: $2a$12$6EyKyPDuHQcHIF7Abawva.pCLQhGs0r/3NybeiMVgaKTDPbm.a7b6
+
+# Who's keys will have access to `machine_username`'s account
+github_usernames:
+  - tuupke
+
+ccs_hostname: domjudge.org/demoweb
+
+acng_port: 3142
+languages: openjdk@17 c cpp python@3.10
+
+cert_minimum_days_valid: 7

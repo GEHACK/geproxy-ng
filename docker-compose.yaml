@@ -17,7 +17,7 @@ services:
       user-data:
         condition: service_completed_successfully
     environment:
-      - DOMJUDGE_REMOTE=${DOMJUDGE_URL:-judge.gehack.nl}
+      - CCS_HOSTNAME=${CCS_HOSTNAME:-judge.gehack.nl}
       - CONTEST_HASH=${CONTEST_HASH:-contest_hash}
       - SSL_CERT_LOC=${SSL_CERT_LOC:-}
       - SSL_KEY_LOC=${SSL_KEY_LOC:-}
@@ -64,10 +64,14 @@ services:
       context: ./dnsmasq
     network_mode: host
     environment:
-      - PRINTER_MAC=${PRINTER_MAC:-aa:bb:cc:dd:ee:ff}
       - PRIVATE_IP=${PRIVATE_IP:-10.1.0.1}
-      - BIND_INTERFACE=${PRIVATE_INTERFACE:-lo}
+      - PRIVATE_INTERFACE=${PRIVATE_INTERFACE:-lo}
+      - SUBNET_START=${SUBNET_START:-10.1.0.100}
+      - SUBNET_END=${SUBNET_END:-10.1.255.255}
+      - SUBNET_NETMASK=${SUBNET_NETMASK:-255.255.0.0}
       - DOMAIN=${DOMAIN:-progcont}
+      - DNS_RESOLVER=${DNS_RESOLVER:-1.1.1.1}
+      - STATIC_LEASES=${STATIC_LEASES:-}
     volumes:
       - ./dnsmasq/dnsmasq.conf.template:/etc/dnsmasq.conf.template
       - ./pxe:/pxe
@@ -87,7 +91,7 @@ services:
       - -c
       - |
         set -o pipefail && 
-        cat<<EOT>/pxe/user-data
+        cat<<"EOT">/pxe/user-data
         #cloud-config
         autoinstall:
           version: 1
@@ -100,13 +104,13 @@ services:
             mode: reboot
             message: Install done, bye bye
           identity:
-            hostname: $${MACHINE_HOSTNAME:-machine}
-            password: $${MACHINE_PASSWORD}
-            realname: $${MACHINE_USERNAME:-admin}
-            username: $${MACHINE_USERNAME:-admin}
+            hostname: ${MACHINE_HOSTNAME:-machine}
+            password: ${MACHINE_PASSWORD}
+            realname: ${MACHINE_USERNAME:-admin}
+            username: ${MACHINE_USERNAME:-admin}
           ssh:
             allow-pw: false
             install-server: true
             authorized-keys: 
-        $$(echo "$$GITHUB_USERNAMES" | tr "," "\n" | (xargs -I{} curl -Sf https://github.com/{}.keys | sed -e 's/^/    - /'))
+        $(echo "$GITHUB_USERNAMES" | tr "," "\n" | (xargs -I{} curl -Sf https://github.com/{}.keys | sed -e 's/^/    - /'))
         EOT

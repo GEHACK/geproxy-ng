@@ -8,7 +8,7 @@ server {
     client_max_body_size 128m;
 
     location / {
-        proxy_pass https://$DOMJUDGE_REMOTE/;
+        proxy_pass https://$CCS_HOSTNAME/;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         # proxy_set_header X-Forwarded-For $remote_addr;
         proxy_ssl_verify      off;

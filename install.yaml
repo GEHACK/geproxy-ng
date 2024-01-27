@@ -1,7 +1,13 @@
+# Note ensure python-netaddr or python3-netaddr is installed!
+
 ---
 - name: Setup geproxy
   gather_facts: true
   hosts: all
+  vars_files:
+    - defaults.yaml
+    - config.yml
+    - config.yaml
   become: yes
   handlers:
     - name: Restart systemd-resolved
@@ -25,6 +31,33 @@
         state: mounted # Ensure that this is made permanent in /etc/fstab
 
   tasks:
+  - name: Check if already installed
+    tags: never, clean
+    ansible.builtin.stat:
+      path: /opt/geproxy
+    register: geproxy
+
+  - name: Clean composition
+    tags: never, clean
+    ansible.builtin.command:
+      chdir: /opt/geproxy
+      cmd: docker compose down --rmi=local
+    when: geproxy.stat.exists
+
+  - name: Unmount Ubuntu
+    tags: never, clean
+    ansible.posix.mount:
+      path: /opt/geproxy/pxe/ubuntu
+      state: unmounted # Ensure that this is made permanent in /etc/fstab
+
+  - name: Remove files
+    tags: never, clean
+    become: yes
+    ansible.builtin.file:
+      path: /opt/geproxy
+      state: absent
+    when: geproxy.stat.exists
+
   - name: Remove old packages
     ansible.builtin.apt:
       state: absent
@@ -52,6 +85,7 @@
       - binutils
       - perl
       - liblzma-dev
+      - python3-netaddr
       - mtools
       - gcc
 
@@ -91,14 +125,16 @@
     when: ansible_user != "root"
 
   - name: Create geproxy directory and set permissions
+    tags: always
     ansible.builtin.file:
       path: /opt/geproxy
       state: directory
       owner: "{{ ansible_user }}"
       mode: u=rwx,g=rx,o=rx
-      recurse: yes
+      recurse: no
 
   - name: Synchronize current directory
+    tags: always
     become: no
     synchronize:
       src: ./
@@ -106,12 +142,29 @@
       owner: no
       group: no
 
-  - name: Change /opt/geproxy permissions to root
+
+  - name: Synchronize current directory
+    tags: always
+    become: no
+    ansible.builtin.synchronize:
+      src: ./
+      dest: /opt/geproxy/
+      owner: no
+      group: no
+
+  - name: Ensure `./acng/` exists
+    tags: always
     ansible.builtin.file:
-      path: /opt/geproxy
+      path: /opt/geproxy/acng
       state: directory
-      owner: "{{ ansible_user }}"
-      recurse: yes
+
+  - name: Fill .env
+    tags: always
+    become: no
+    ansible.builtin.template:
+      src: env.j2
+      dest: /opt/geproxy/.env
+
 
   - name: Check if /etc/netplan/99-geproxy.yaml exists
     ansible.builtin.stat:
@@ -128,7 +181,7 @@
         ignore_errors: true
 
       - name: Rename old netplans
-        command: "mv '{{ item.path }}' '{{ item.path }}.{{ ansible_date_time.iso8601 }}.old'"
+        command: "mv '{{ item.path }}' '{{ item.path }}.pre-geproxy.old'"
         with_items: "{{ cleanup.files }}"
         ignore_errors: true
 
@@ -182,19 +235,33 @@
     notify: Create mountpoint
 
   - name: Check for submodule ipxe
+    tags: ipxe
     become: no
     ansible.builtin.stat:
       path: /opt/geproxy/ipxe/src
     register: ipxeFound
 
   - name: Initialise submodule ipxe
+    tags: ipxe
     become: no
     ansible.builtin.command:
       chdir: /opt/geproxy/
       cmd: "git submodule update --init --recursive ipxe"
     when: not ipxeFound.stat.exists
 
+  - name: "Clean iPXE files '{{ item }}'"
+    become: no
+    tags: never, ipxe
+    ansible.builtin.file:
+      path: '{{ item }}'
+      state: absent
+    with_items:
+      - /opt/geproxy/pxe/undionly.kpxe
+      - /opt/geproxy/ipxe/src/bin/undionly.kpxe
+      - /opt/geproxy/pxe/embed.ipxe
+
   - name: Generate bootloader
+    tags: ipxe
     become: no
     block:
     - name: Check for built bootloader
@@ -210,7 +277,7 @@
           source ../.env
           set +a
           
-          envsubst '$PRIVATE_IP' < embed.ipxe.template > embed.ipxe
+          envsubst '$DOMAIN' < embed.ipxe.template > embed.ipxe
       when: not ipxeBuilt.stat.exists
 
     - name: Generate bootloader
@@ -226,7 +293,8 @@
         remote_src: yes
       when: not ipxeBuilt.stat.exists
 
-  - name: Build the composition
+  - name: "Build the composition"
+    tags: start, restart
     become: no
     ansible.builtin.command:
       chdir: /opt/geproxy

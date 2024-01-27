@@ -1,4 +1,7 @@
-FROM ruby:3.2.2
+# When there are issues, compare this file to: https://github.com/freeCodeCamp/devdocs/blob/main/Dockerfile
+# The main difference should be on line 20. This dockerfile installs a specific set of languages. While main
+# installs everything.
+FROM ruby:3.3.0
 ENV LANG=C.UTF-8
 ENV ENABLE_SERVICE_WORKER=true
 

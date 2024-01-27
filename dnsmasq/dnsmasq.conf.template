@@ -2,20 +2,20 @@ log-queries
 log-dhcp
 log-facility=/dev/stdout
 
-interface=${BIND_INTERFACE}
+interface=${PRIVATE_INTERFACE}
 listen-address=${PRIVATE_IP}
 domain=${DOMAIN}
 
-dhcp-range=${BIND_INTERFACE},10.1.0.100,10.1.255.255,255.255.0.0,infinite
-dhcp-option=${BIND_INTERFACE},option:router,10.1.0.1
+dhcp-range=${PRIVATE_INTERFACE},${SUBNET_START},${SUBNET_END},${SUBNET_NETMASK},infinite
+dhcp-option=${PRIVATE_INTERFACE},option:router,${PRIVATE_IP}
 
-# Printers
-dhcp-host=ac:16:2d:37:cb:c5,10.1.0.10,0
-dhcp-host=b0:0c:d1:de:f0:0d,10.1.0.11,0
+# dhcp-host=ac:16:2d:37:cb:c5,10.1.0.10,0
+# dhcp-host=b0:0c:d1:de:f0:0d,10.1.0.11,0
+${STATIC_LEASES}
 
 dhcp-authoritative
-dhcp-option=${BIND_INTERFACE},42,${PRIVATE_IP}
-dhcp-option=${BIND_INTERFACE},6,${PRIVATE_IP}
+dhcp-option=${PRIVATE_INTERFACE},42,${PRIVATE_IP}
+dhcp-option=${PRIVATE_INTERFACE},6,${PRIVATE_IP}
 
 #dhcp-option=93,16
 enable-tftp
@@ -34,7 +34,7 @@ address=/_gategay/${PRIVATE_IP}
 
 dhcp-boot=undionly.kpxe
 
-server=1.1.1.1
+server=${DNS_RESOLVER}
 
 srv-host=_apt_proxy._tcp.${DOMAIN},${PRIVATE_IP},3142
 no-resolv
