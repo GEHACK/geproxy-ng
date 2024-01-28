@@ -1,6 +1,3 @@
-# When there are issues, compare this file to: https://github.com/freeCodeCamp/devdocs/blob/main/Dockerfile
-# The main difference should be on line 20. This dockerfile installs a specific set of languages. While main
-# installs everything.
 FROM ruby:3.3.0
 ENV LANG=C.UTF-8
 ENV ENABLE_SERVICE_WORKER=true
@@ -12,14 +9,24 @@ RUN apt-get update && \
 
 RUN git clone https://github.com/freeCodeCamp/devdocs /devdocs
 WORKDIR /devdocs
+# Checkout a somewhat stable version, devdocs is more rolling release than anything else.
+RUN git checkout dc3ad6e4d44f47417b72c7cda33c5308cd67f93f
 
 RUN bundle install --system && \
     rm -rf ~/.gem /root/.bundle/cache /usr/local/bundle/cache
 
-ARG languages='openjdk@18 c cpp python@3.10'
-RUN thor docs:download $languages && \
-    thor assets:compile && \
-    rm -rf /tmp
+ENV LANGUAGES='openjdk@18 c cpp python@3.10'
 
 EXPOSE 9292
-CMD rackup -o 0.0.0.0
+
+COPY <<EOF /entrypoint.sh
+#!/bin/bash
+
+cd /devdocs
+thor docs:download ${LANGUAGES}
+thor assets:compile
+
+rackup -o 0.0.0.0
+EOF
+
+CMD /entrypoint
