@@ -9,9 +9,9 @@ choose --default exit --timeout 5000 target && goto ${target}
 
 :installer
 set server_ip cloud-init
-set nfs_path /ubuntu
-kernel http://${server_ip}${nfs_path}/casper/hwe-vmlinuz initrd=hwe-initrd autoinstall root=/dev/ram0 ramdisk_size=1500000 boot=casper url=http://${server_ip}/ubuntu.iso net.ifnames=0 biosdevname=0 ip=dhcp domain=${DOMAIN} ds=nocloud-net;s=http://cloud-init/
-initrd http://${server_ip}${nfs_path}/casper/hwe-initrd
+set installer_path /ubuntu
+kernel http://${server_ip}${installer_path}/casper/hwe-vmlinuz initrd=hwe-initrd autoinstall root=/dev/ram0 ramdisk_size=1500000 boot=casper url=http://${server_ip}/ubuntu.iso net.ifnames=0 biosdevname=0 ip=dhcp domain=${DOMAIN} ds=nocloud-net;s=http://cloud-init/
+initrd http://${server_ip}${installer_path}/casper/hwe-initrd
 boot || goto shell
 
 :exit

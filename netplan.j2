@@ -9,9 +9,9 @@ network:
       dhcp4: no
 {% endfor %}
   bridges:
-    br-geproxy:
+    {{ lookup('ansible.builtin.env', 'PRIVATE_INTERFACE', default='br-geproxy') }}:
       interfaces: [{{ private_interfaces | join(',') }}]
       dhcp4: false
-      addresses: [10.1.0.1/16]
+      addresses: [lookup('ansible.builtin.env', 'PRIVATE_IP', default='10.1.0.1')/16]
       nameservers:
-        addresses: [1.1.1.1]
+        addresses: [lookup('ansible.builtin.env', 'DNS_RESOLVER', default='1.1.1.1')]

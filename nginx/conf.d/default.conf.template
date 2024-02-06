@@ -1,6 +1,6 @@
 server {
 
-    include listen;
+    listen 80;
 
     server_name cloud-init cloud-init.${DOMAIN};
     add_header Access-Control-Allow-Origin *;
