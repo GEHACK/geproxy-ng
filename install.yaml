@@ -142,21 +142,12 @@
       owner: no
       group: no
 
-
-  - name: Synchronize current directory
-    tags: always
-    become: no
-    ansible.builtin.synchronize:
-      src: ./
-      dest: /opt/geproxy/
-      owner: no
-      group: no
-
   - name: Ensure `./acng/` exists
     tags: always
     ansible.builtin.file:
       path: /opt/geproxy/acng
       state: directory
+
 
   - name: Fill .env
     tags: always

@@ -17,6 +17,10 @@ github_usernames:
 ccs_hostname: domjudge.org/demoweb
 
 acng_port: 3142
-languages: openjdk@17 c cpp python@3.10
+languages:
+  - openjdk@17
+  - c
+  - cpp
+  - python@3.10
 
 cert_minimum_days_valid: 7
