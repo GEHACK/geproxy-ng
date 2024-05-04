@@ -81,11 +81,6 @@ services:
     image: alpine/curl
     volumes:
     - ./pxe:/pxe
-    environment:
-      - MACHINE_HOSTNAME=${MACHINE_HOSTNAME:-}
-      - MACHINE_PASSWORD=${MACHINE_PASSWORD:-}
-      - MACHINE_USERNAME=${MACHINE_USERNAME:-}
-      - GITHUB_USERNAMES=${GITHUB_USERNAMES:-}
     command:
       - /bin/sh
       - -c
@@ -112,5 +107,5 @@ services:
             allow-pw: false
             install-server: true
             authorized-keys: 
-        $(echo "${GITHUB_USERNAMES:-tuupke}" | tr "," "\n" | (xargs -I{} curl -Sf https://github.com/{}.keys | sed -e 's/^/    - /'))
         EOT
+        echo "${GITHUB_USERNAMES:-tuupke}" | tr "," "\n" | (xargs -I{} curl -Sf https://github.com/{}.keys | sed -e 's/^/    - /') >>/pxe/user-data 
