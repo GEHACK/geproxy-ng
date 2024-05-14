@@ -14,7 +14,7 @@ machine_password: $2a$12$6EyKyPDuHQcHIF7Abawva.pCLQhGs0r/3NybeiMVgaKTDPbm.a7b6
 github_usernames:
   - tuupke
 
-ccs_hostname: domjudge.org/demoweb
+ccs_host: https://domjudge.org/demoweb
 
 acng_port: 3142
 languages:

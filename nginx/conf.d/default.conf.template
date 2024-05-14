@@ -1,48 +1,44 @@
+server {
+    listen      80;
+    root   /var/www/html;
+
+    server_name cloud-init cloud-init.${DOMAIN};
+
+    add_header Access-Control-Allow-Origin *;
+
+}
 
 map $http_host $proxy {
     hostnames;
     default '';
-    docs http://docs:9292;
-    docs.${DOMAIN} http://docs:9292;
-    judge $CCS_HOSTNAME;
-    judge.${DOMAIN} $CCS_HOSTNAME;
 
-    pixie pixie:4000;
-    pixie.${DOMAIN} pixie:4000;
+    docs http://devdocs:9292;
+    docs.${DOMAIN} http://devdocs:9292;
+
+    judge ${CCS_HOST};
+    judge.${DOMAIN} ${CCS_HOST};
+
+    pixie http://pixie:4000;
+    pixie.${DOMAIN} http://pixie:4000;
 }
 
-server {
-    listen 80;
-
-    server_name cloud-init cloud-init.${DOMAIN};
-    add_header Access-Control-Allow-Origin *;
-
-    root /var/www/html;
-}
+resolver 127.0.0.11 valid=60s;
 
 server {
     include listen;
 
-    add_header Access-Control-Allow-Origin *;
+    server_name docs docs.${DOMAIN} judge judge.${DOMAIN} pixie pixie.${DOMAIN};
+
+    add_header           Access-Control-Allow-Origin *;
     client_max_body_size 128m;
 
     location / {
-        proxy_redirect off;
+        proxy_redirect   off;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 
-        proxy_pass http://$container
-        proxy_pass http://devdocs:9292/;
+        proxy_ssl_verify      off;
+        proxy_ssl_server_name on;
+        proxy_pass            $proxy;
     }
-
-        add_header Access-Control-Allow-Origin *;
-
-
-        location / {
-            proxy_pass https://$CCS_HOSTNAME/;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_ssl_verify      off;
-            proxy_ssl_server_name on;
-        }
-
 }

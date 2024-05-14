@@ -17,7 +17,7 @@ services:
       user-data:
         condition: service_completed_successfully
     environment:
-      - CCS_HOSTNAME=${CCS_HOSTNAME:-judge.gehack.nl}
+      - CCS_HOST=${CCS_HOST:-https://judge.gehack.nl}
       - CONTEST_HASH=${CONTEST_HASH:-contest_hash}
       - SSL_CERT_LOC=${SSL_CERT_LOC:-}
       - SSL_KEY_LOC=${SSL_KEY_LOC:-}
