@@ -100,9 +100,16 @@ services:
             message: Install done, bye bye
           identity:
             hostname: ${MACHINE_HOSTNAME:-machine}
-            password: ${MACHINE_PASSWORD:-$2a$12$6EyKyPDuHQcHIF7Abawva.pCLQhGs0r/3NybeiMVgaKTDPbm.a7b6}
-            realname: ${MACHINE_USERNAME:-admin}
-            username: ${MACHINE_USERNAME:-admin}
+            password: ${MACHINE_PASSWORD:-'$2a$12$6EyKyPDuHQcHIF7Abawva.pCLQhGs0r/3NybeiMVgaKTDPbm.a7b6'}
+            realname: ${MACHINE_USERNAME:-contestadmin}
+            username: ${MACHINE_USERNAME:-contestadmin}
+          storage:
+            layout:
+              name: lvm
+            grub:
+              reorder_uefi: True
+              update_nvram: True
+              reorder_uefi_force_fallback: True
           ssh:
             allow-pw: false
             install-server: true

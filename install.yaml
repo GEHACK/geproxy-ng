@@ -268,7 +268,7 @@
           source ../.env
           set +a
           
-          envsubst '$DOMAIN' < embed.ipxe.template > embed.ipxe
+          envsubst '$PRIVATE_IP' < embed.ipxe.template > embed.ipxe
       when: not ipxeBuilt.stat.exists
 
     - name: Generate bootloader

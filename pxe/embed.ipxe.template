@@ -2,19 +2,25 @@
 
 dhcp
 
-menu
-item --key i installer    Boot Installer
-item exit         Continue
-choose --default exit --timeout 5000 target && goto ${target}
+set server_ip cloud-init
+
+# Skip the menu if this magical file exists.
+imgfetch http://${server_ip}/mart-so-smart || goto menu
 
 :installer
-set server_ip cloud-init
-set installer_path /ubuntu
-kernel http://${server_ip}${installer_path}/casper/hwe-vmlinuz initrd=hwe-initrd autoinstall root=/dev/ram0 ramdisk_size=1500000 boot=casper url=http://${server_ip}/ubuntu.iso net.ifnames=0 biosdevname=0 ip=dhcp domain=${DOMAIN} ds=nocloud-net;s=http://cloud-init/
-initrd http://${server_ip}${installer_path}/casper/hwe-initrd
+kernel http://${server_ip}ubuntu/casper/vmlinuz initrd=initrd autoinstall root=/dev/ram0 ramdisk_size=2000000 boot=casper url=http://${server_ip}/ubuntu.iso net.ifnames=0 biosdevname=0 ip=dhcp cloud-config-url=http://${server_ip}/user-data
+initrd http://${server_ip}ubuntu/casper/initrd
 boot || goto shell
+
+:shell
+shell
 
 :exit
 exit
 
-:shell
+:menu
+menu
+item --key i installer    Boot [i]nstaller
+item shell    Start shell
+item exit         Continue
+choose --default exit --timeout 5000 target && goto ${target}
