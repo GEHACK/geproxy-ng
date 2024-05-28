@@ -201,6 +201,7 @@
         ansible.builtin.template:
           src: netplan.j2
           dest: /etc/netplan/99-geproxy.yaml
+          mode: "500"
 
       - name: Generate netplan
         ansible.builtin.command: "netplan generate"
