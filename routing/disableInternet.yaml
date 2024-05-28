@@ -3,6 +3,10 @@
   gather_facts: false
   hosts: all
   become: yes
+  vars_files:
+    - ../defaults.yaml
+    - ../config.yaml
+    - ../config.yml
   handlers:
     - name: Apply sysctl config
       ansible.builtin.command: "sysctl -p"
@@ -15,10 +19,37 @@
       notify:
         - Apply sysctl config
   tasks:
+    - name: Discover public interface
+      ansible.builtin.shell: ip r | awk '/^default/ {print $5}'
+      register: public_interface_cmd
+
+    - name: Set public interface
+      ansible.builtin.set_fact:
+        public_interface: "{{ public_interface_cmd.stdout }}"
+
+    - name: Disable forwarding from private to public
+      ansible.builtin.iptables:
+        state: absent
+        chain: FORWARD
+        in_interface: "{{ private_interface }}"
+        out_interface: "{{ public_interface }}"
+        jump: ACCEPT
+    
+    - name: Disable forwarding from pulic to private
+      ansible.builtin.iptables:
+        state: absent
+        chain: FORWARD
+        in_interface: "{{ public_interface }}"
+        out_interface:  "{{ private_interface }}"
+        match: state
+        ctstate: RELATED,ESTABLISHED
+        jump: ACCEPT
+
     - name: Disable nat
       ansible.builtin.iptables:
         state: absent
         table: nat
+        out_interface: "{{ public_interface }}"
         chain: POSTROUTING
         jump: MASQUERADE
       notify: Stop ip-forwarding in /etc/sysctl.conf
