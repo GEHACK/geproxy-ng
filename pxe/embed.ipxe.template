@@ -8,8 +8,8 @@ set server_ip cloud-init
 imgfetch http://${server_ip}/mart-so-smart || goto menu
 
 :installer
-kernel http://${server_ip}ubuntu/casper/vmlinuz initrd=initrd autoinstall root=/dev/ram0 ramdisk_size=2000000 boot=casper url=http://${server_ip}/ubuntu.iso net.ifnames=0 biosdevname=0 ip=dhcp cloud-config-url=http://${server_ip}/user-data
-initrd http://${server_ip}ubuntu/casper/initrd
+kernel http://${server_ip}/ubuntu/casper/vmlinuz initrd=initrd autoinstall root=/dev/ram0 ramdisk_size=2000000 boot=casper url=http://${server_ip}/ubuntu.iso net.ifnames=0 biosdevname=0 ip=dhcp cloud-config-url=http://${server_ip}/user-data
+initrd http://${server_ip}/ubuntu/casper/initrd
 boot || goto shell
 
 :shell
