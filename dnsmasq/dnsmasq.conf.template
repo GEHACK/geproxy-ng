@@ -30,7 +30,7 @@ address=/judge/${PRIVATE_IP}
 address=/pixie/${PRIVATE_IP}
 address=/docs/${PRIVATE_IP}
 address=/cloud-init/${PRIVATE_IP}
-address=/_gategay/${PRIVATE_IP}
+address=/_gateway/${PRIVATE_IP}
 
 dhcp-boot=undionly.kpxe
 
