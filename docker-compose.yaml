@@ -160,7 +160,7 @@ services:
               - type: format
                 id: format-1
                 fstype: ext4
-                volume: lvm_volgroup-0
+                volume: lvm_partition-0
                 preserve: false
 
               # mounts
