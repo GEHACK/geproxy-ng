@@ -19,7 +19,7 @@ ENV LANGUAGES='openjdk@18 c cpp python@3.10'
 
 EXPOSE 9292
 
-COPY <<EOF /entrypoint.sh
+COPY --chmod=755 <<EOF /entrypoint.sh
 #!/bin/bash
 
 cd /devdocs
@@ -29,4 +29,4 @@ thor assets:compile
 rackup -o 0.0.0.0
 EOF
 
-CMD /entrypoint
+CMD /entrypoint.sh
