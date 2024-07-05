@@ -32,7 +32,7 @@ address=/docs/${PRIVATE_IP}
 address=/cloud-init/${PRIVATE_IP}
 address=/_gateway/${PRIVATE_IP}
 
-dhcp-boot=undionly.kpxe
+dhcp-boot=ipxe.efi
 
 server=${DNS_RESOLVER}
 

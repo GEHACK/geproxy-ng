@@ -248,8 +248,8 @@
       path: '{{ item }}'
       state: absent
     with_items:
-      - /opt/geproxy/pxe/undionly.kpxe
-      - /opt/geproxy/ipxe/src/bin/undionly.kpxe
+      - /opt/geproxy/pxe/ipxe.efi
+      - /opt/geproxy/ipxe/src/bin-x86_64-efi/ipxe.efi
       - /opt/geproxy/pxe/embed.ipxe
 
   - name: Generate bootloader
@@ -258,7 +258,7 @@
     block:
     - name: Check for built bootloader
       ansible.builtin.stat:
-        path: /opt/geproxy/pxe/undionly.kpxe
+        path: /opt/geproxy/pxe/ipxe.efi
       register: ipxeBuilt
 
     - name: Generate bootloader script embed.ipxe
@@ -275,12 +275,12 @@
     - name: Generate bootloader
       ansible.builtin.command:
         chdir: /opt/geproxy/ipxe/src
-        cmd: make clean bin/undionly.kpxe EMBED=/opt/geproxy/pxe/embed.ipxe
+        cmd: make clean bin-x86_64-efi/ipxe.efi EMBED=/opt/geproxy/pxe/embed.ipxe
       when: not ipxeBuilt.stat.exists
 
     - name: Copy bootloader to location
       ansible.builtin.copy:
-        src: /opt/geproxy/ipxe/src/bin/undionly.kpxe
+        src: /opt/geproxy/ipxe/src/bin-x86_64-efi/ipxe.efi
         dest: /opt/geproxy/pxe
         remote_src: yes
       when: not ipxeBuilt.stat.exists
