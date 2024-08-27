@@ -148,14 +148,12 @@
       path: /opt/geproxy/acng
       state: directory
 
-
   - name: Fill .env
     tags: always
     become: no
     ansible.builtin.template:
       src: env.j2
       dest: /opt/geproxy/.env
-
 
   - name: Check if /etc/netplan/99-geproxy.yaml exists
     ansible.builtin.stat:
@@ -219,7 +217,7 @@
     notify:
       - Restart systemd-resolved
 
-  - name: Download ubuntu
+  - name: Download Ubuntu
     become: no
     ansible.builtin.get_url:
       url: https://releases.ubuntu.com/24.04/ubuntu-24.04-live-server-amd64.iso
@@ -241,25 +239,15 @@
       cmd: "git submodule update --init --recursive ipxe"
     when: not ipxeFound.stat.exists
 
-  - name: "Clean iPXE files '{{ item }}'"
-    become: no
-    tags: never, ipxe
-    ansible.builtin.file:
-      path: '{{ item }}'
-      state: absent
-    with_items:
-      - /opt/geproxy/pxe/ipxe.efi
-      - /opt/geproxy/ipxe/src/bin-x86_64-efi/ipxe.efi
-      - /opt/geproxy/pxe/embed.ipxe
-
   - name: Generate bootloader
     tags: ipxe
     become: no
     block:
-    - name: Check for built bootloader
-      ansible.builtin.stat:
-        path: /opt/geproxy/pxe/ipxe.efi
-      register: ipxeBuilt
+    - name: Clean bootloader script
+      tags: never, ipxe
+      ansible.builtin.file:
+        path: /opt/geproxy/pxe/embed.ipxe
+        state: absent
 
     - name: Generate bootloader script embed.ipxe
       ansible.builtin.shell:
@@ -270,22 +258,45 @@
           set +a
           
           envsubst '$PRIVATE_IP' < embed.ipxe.template > embed.ipxe
-      when: not ipxeBuilt.stat.exists
+      creates: /opt/geproxy/pxe/embed.ipxe
 
-    - name: Generate bootloader
-      ansible.builtin.command:
-        chdir: /opt/geproxy/ipxe/src
-        cmd: make clean bin-x86_64-efi/ipxe.efi EMBED=/opt/geproxy/pxe/embed.ipxe
-      when: not ipxeBuilt.stat.exists
+    - name: Create bootloader
+      block:
+        - name: Clean bootloader
+          tags: never, ipxe
+          ansible.builtin.file:
+            path: "{{ path }}/{{ item.target_name }}"
+            state: absent
+          loop:
+            - /opt/geproxy/ipxe/src
+            - /opt/geproxy/pxe
+          loop_control:
+            loop_var: path
 
-    - name: Copy bootloader to location
-      ansible.builtin.copy:
-        src: /opt/geproxy/ipxe/src/bin-x86_64-efi/ipxe.efi
-        dest: /opt/geproxy/pxe
-        remote_src: yes
-      when: not ipxeBuilt.stat.exists
+        - name: Check for already built bootloader
+          ansible.builtin.stat:
+            path: "/opt/geproxy/pxe/{{ item.target_name }}"
+          register: ipxe_built
 
-  - name: "Build the composition"
+        - name: Build bootloader
+          ansible.builtin.command:
+            chdir: /opt/geproxy/ipxe/src
+            cmd: "make clean {{ item.name }} EMBED=/opt/geproxy/pxe/embed.ipxe"
+          when: not ipxe_built.stat.exists
+
+        - name: Copy bootloader to location
+          ansible.builtin.copy:
+            src: "/opt/geproxy/ipxe/src/{{ item.name }}"
+            dest: "/opt/geproxy/pxe/{{ item.target_name }}"
+            remote_src: yes
+          when: not ipxe_built.stat.exists
+      loop:
+        - name: bin/undionly.kpxe
+          target_name: undionly.kpxe
+        - name: bin-x86_64-efi/ipxe.efi
+          target_name: ipxe.efi
+
+  - name: Build the composition
     tags: start, restart
     become: no
     ansible.builtin.command:

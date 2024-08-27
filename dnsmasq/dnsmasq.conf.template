@@ -32,7 +32,16 @@ address=/docs/${PRIVATE_IP}
 address=/cloud-init/${PRIVATE_IP}
 address=/_gateway/${PRIVATE_IP}
 
-dhcp-boot=ipxe.efi
+# List of client-arch numbers
+# https://www.iana.org/assignments/dhcpv6-parameters/dhcpv6-parameters.xhtml#processor-architecture
+
+# x86 BIOS
+dhcp-match=set:x86_bios,option:client-arch,0
+dhcp-boot=tag:x86_bios,undionly.kpxe
+
+# UEFI x64
+dhcp-match=set:uefi_x86-64,option:client-arch,7
+dhcp-boot=tag:uefi_x86-64,ipxe.efi
 
 server=${DNS_RESOLVER}
 
