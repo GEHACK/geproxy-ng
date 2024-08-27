@@ -239,7 +239,7 @@
       cmd: "git submodule update --init --recursive ipxe"
     when: not ipxeFound.stat.exists
 
-  - name: Generate bootloader
+  - name: Generate bootloaders
     tags: ipxe
     become: no
     block:
@@ -258,38 +258,10 @@
           set +a
           
           envsubst '$PRIVATE_IP' < embed.ipxe.template > embed.ipxe
-      creates: /opt/geproxy/pxe/embed.ipxe
+        creates: /opt/geproxy/pxe/embed.ipxe
 
     - name: Create bootloader
-      block:
-        - name: Clean bootloader
-          tags: never, ipxe
-          ansible.builtin.file:
-            path: "{{ path }}/{{ item.target_name }}"
-            state: absent
-          loop:
-            - /opt/geproxy/ipxe/src
-            - /opt/geproxy/pxe
-          loop_control:
-            loop_var: path
-
-        - name: Check for already built bootloader
-          ansible.builtin.stat:
-            path: "/opt/geproxy/pxe/{{ item.target_name }}"
-          register: ipxe_built
-
-        - name: Build bootloader
-          ansible.builtin.command:
-            chdir: /opt/geproxy/ipxe/src
-            cmd: "make clean {{ item.name }} EMBED=/opt/geproxy/pxe/embed.ipxe"
-          when: not ipxe_built.stat.exists
-
-        - name: Copy bootloader to location
-          ansible.builtin.copy:
-            src: "/opt/geproxy/ipxe/src/{{ item.name }}"
-            dest: "/opt/geproxy/pxe/{{ item.target_name }}"
-            remote_src: yes
-          when: not ipxe_built.stat.exists
+      include_tasks: generate-bootloader.yaml # Needed due to a limitation of blocks
       loop:
         - name: bin/undionly.kpxe
           target_name: undionly.kpxe
