@@ -13,6 +13,11 @@ machine_password: $2a$12$6EyKyPDuHQcHIF7Abawva.pCLQhGs0r/3NybeiMVgaKTDPbm.a7b6
 # Who's keys will have access to `machine_username`'s account
 github_usernames:
   - tuupke
+  - aarhunt
+  - henkdebutler
+  - bhenkemans
+  - zeo
+  - gewoonsandor
 
 ccs_host: https://domjudge.org/demoweb
 
