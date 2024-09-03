@@ -78,13 +78,13 @@ services:
       - ./dnsmasq/dnsmasq.leases:/var/lib/misc/dnsmasq.leases
 
   user-data:
-    image: alpine/curl
+    image: alpine:3
     volumes:
     - ./pxe:/pxe
     command:
       - /bin/sh
       - -c
       - |
-        set -o pipefail
+        apk -U add envsubst curl
         envsubst < pxe/user-data.template | tee pxe/user-data
         echo "${GITHUB_USERNAMES:-tuupke}" | tr "," "\n" | (xargs -I{} curl -Sf https://github.com/{}.keys | sed -e 's/^/    - /') >> /pxe/user-data
