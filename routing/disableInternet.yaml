@@ -7,17 +7,6 @@
     - ../defaults.yaml
     - ../config.yaml
     - ../config.yml
-  handlers:
-    - name: Apply sysctl config
-      ansible.builtin.command: "sysctl -p"
-    - name: Stop ip-forwarding in /etc/sysctl.conf
-      ansible.builtin.lineinfile:
-        path: /etc/sysctl.conf
-        state: present
-        regexp: '^\s*net.ipv4.ip_forward\s*=\s*1'
-        line: net.ipv4.ip_forward=0
-      notify:
-        - Apply sysctl config
   tasks:
     - name: Discover public interface
       ansible.builtin.shell: ip r | awk '/^default/ {print $5}'
@@ -52,4 +41,3 @@
         out_interface: "{{ public_interface }}"
         chain: POSTROUTING
         jump: MASQUERADE
-      notify: Stop ip-forwarding in /etc/sysctl.conf
