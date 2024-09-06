@@ -80,11 +80,16 @@ services:
   user-data:
     image: alpine:3
     volumes:
-    - ./pxe:/pxe
+      - ./pxe:/pxe
+    environment:
+      - MACHINE_HOSTNAME=${MACHINE_HOSTNAME:-machine}
+      - MACHINE_PASSWORD=${MACHINE_PASSWORD:-'$2a$12$6EyKyPDuHQcHIF7Abawva.pCLQhGs0r/3NybeiMVgaKTDPbm.a7b6'}
+      - MACHINE_USERNAME=${MACHINE_USERNAME:-contestadmin}
+      - ACNG_PORT=${ACNG_PORT:-3142}
     command:
       - /bin/sh
       - -c
       - |
-        apk -U add envsubst curl
+        apk -U add gettext curl
         envsubst < pxe/user-data.template | tee pxe/user-data
         echo "${GITHUB_USERNAMES:-tuupke}" | tr "," "\n" | (xargs -I{} curl -Sf https://github.com/{}.keys | sed -e 's/^/    - /') >> /pxe/user-data

@@ -1,15 +1,15 @@
 #cloud-config
 autoinstall:
   version: 1
-  proxy: http://_gateway:3142
+  proxy: http://_gateway:${ACNG_PORT}
   kernel:
     flavor: hwe
   shutdown: reboot
   identity:
-    hostname: ${MACHINE_HOSTNAME:-machine}
-    password: ${MACHINE_PASSWORD:-'$2a$12$6EyKyPDuHQcHIF7Abawva.pCLQhGs0r/3NybeiMVgaKTDPbm.a7b6'}
-    realname: ${MACHINE_USERNAME:-contestadmin}
-    username: ${MACHINE_USERNAME:-contestadmin}
+    hostname: ${MACHINE_HOSTNAME}
+    password: ${MACHINE_PASSWORD}
+    realname: ${MACHINE_USERNAME}
+    username: ${MACHINE_USERNAME}
   storage:
     grub:
       reorder_uefi: true
@@ -21,7 +21,6 @@ autoinstall:
         id: disk-sda
         ptable: gpt
         wipe: superblock-recursive
-        name: ''
         preserve: false
         grub_device: true
 

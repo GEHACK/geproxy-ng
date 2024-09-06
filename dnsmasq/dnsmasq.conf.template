@@ -32,6 +32,13 @@ address=/docs/${PRIVATE_IP}
 address=/cloud-init/${PRIVATE_IP}
 address=/_gateway/${PRIVATE_IP}
 
+# Needed to stop DNS requests on these domain to get forwarded upstream
+local=/docs.${DOMAIN}/
+local=/judge.${DOMAIN}/
+local=/pixie.${DOMAIN}/
+local=/cloud-init.${DOMAIN}/
+local=/_gateway.${DOMAIN}/
+
 # List of client-arch numbers
 # https://www.iana.org/assignments/dhcpv6-parameters/dhcpv6-parameters.xhtml#processor-architecture
 
