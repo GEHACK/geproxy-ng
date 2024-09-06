@@ -23,7 +23,7 @@ ccs_host: https://domjudge.org/demoweb
 
 acng_port: 3142
 languages:
-  - openjdk@17
+  - openjdk@21
   - c
   - cpp
   - python@3.10

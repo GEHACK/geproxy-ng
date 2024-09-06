@@ -1,4 +1,5 @@
 FROM ruby:3.3.0
+
 ENV LANG=C.UTF-8
 ENV ENABLE_SERVICE_WORKER=true
 
@@ -19,14 +20,5 @@ ENV LANGUAGES='openjdk@18 c cpp python@3.10'
 
 EXPOSE 9292
 
-COPY --chmod=755 <<EOF /entrypoint.sh
-#!/bin/bash
-
-cd /devdocs
-thor docs:download ${LANGUAGES}
-thor assets:compile
-
-rackup -o 0.0.0.0
-EOF
-
+ADD --chmod=0755 entrypoint.sh /entrypoint.sh
 CMD /entrypoint.sh
