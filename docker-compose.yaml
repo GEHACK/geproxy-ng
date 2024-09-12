@@ -53,7 +53,7 @@ services:
       dockerfile: ./Dockerfile
       context: ./devdocs
     environment:
-      - LANGUAGES="${LANGUAGES:-'openjdk@17 c cpp python@3.10'}"
+      - LANGUAGES=${LANGUAGES:-'openjdk@17 c cpp python@3.10'}
 
   dnsmasq:
     image: geproxy/dnsmasq

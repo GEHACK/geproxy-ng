@@ -20,5 +20,14 @@ ENV LANGUAGES='openjdk@18 c cpp python@3.10'
 
 EXPOSE 9292
 
-ADD --chmod=0755 entrypoint.sh /entrypoint.sh
+COPY <<"EOF" /entrypoint.sh
+#!/bin/bash
+
+cd /devdocs
+thor docs:download ${LANGUAGES}
+thor assets:compile
+
+rackup -o 0.0.0.0
+EOF
+
 CMD /entrypoint.sh
