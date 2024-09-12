@@ -6,6 +6,8 @@ static_macs: []
 
 domain: progcont
 
+ubuntu_iso_url: https://releases.ubuntu.com/24.04/ubuntu-24.04.1-live-server-amd64.iso
+
 machine_hostname: machine
 machine_username: admin
 machine_password: $2a$12$6EyKyPDuHQcHIF7Abawva.pCLQhGs0r/3NybeiMVgaKTDPbm.a7b6
@@ -13,11 +15,6 @@ machine_password: $2a$12$6EyKyPDuHQcHIF7Abawva.pCLQhGs0r/3NybeiMVgaKTDPbm.a7b6
 # Who's keys will have access to `machine_username`'s account
 github_usernames:
   - tuupke
-  - aarhunt
-  - henkdebutler
-  - bhenkemans
-  - zeo
-  - gewoonsandor
 
 ccs_host: https://domjudge.org/demoweb
 

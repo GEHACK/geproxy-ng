@@ -220,7 +220,7 @@
   - name: Download Ubuntu
     become: no
     ansible.builtin.get_url:
-      url: https://releases.ubuntu.com/24.04/ubuntu-24.04.1-live-server-amd64.iso
+      url: "{{ ubuntu_iso_url }}"
       dest: /opt/geproxy/pxe/ubuntu.iso
     notify: Create mountpoint
 
