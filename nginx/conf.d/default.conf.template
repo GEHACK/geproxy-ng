@@ -2,8 +2,6 @@ server {
     listen      80;
     root   /var/www/html;
 
-    server_name cloud-init cloud-init.${DOMAIN};
-
     add_header Access-Control-Allow-Origin *;
 
 }
@@ -17,9 +15,6 @@ map $http_host $proxy {
 
     judge ${CCS_HOST};
     judge.${DOMAIN} ${CCS_HOST};
-
-    pixie http://pixie:4000;
-    pixie.${DOMAIN} http://pixie:4000;
 }
 
 resolver 127.0.0.11 valid=60s;
@@ -27,7 +22,7 @@ resolver 127.0.0.11 valid=60s;
 server {
     include listen;
 
-    server_name docs docs.${DOMAIN} judge judge.${DOMAIN} pixie pixie.${DOMAIN};
+    server_name docs docs.${DOMAIN} judge judge.${DOMAIN};
 
     add_header           Access-Control-Allow-Origin *;
     client_max_body_size 128m;

@@ -22,19 +22,12 @@ enable-tftp
 
 tftp-root=/pxe
 address=/judge.${DOMAIN}/${PRIVATE_IP}
-address=/pixie.${DOMAIN}/${PRIVATE_IP}
 address=/docs.${DOMAIN}/${PRIVATE_IP}
-address=/cloud-init.${DOMAIN}/${PRIVATE_IP}
 address=/_gateway.${DOMAIN}/${PRIVATE_IP}
 address=/judge/${PRIVATE_IP}
-address=/pixie/${PRIVATE_IP}
 address=/docs/${PRIVATE_IP}
-address=/cloud-init/${PRIVATE_IP}
 address=/_gateway/${PRIVATE_IP}
-
-dhcp-boot=undionly.kpxe
 
 server=${DNS_RESOLVER}
 
-srv-host=_apt_proxy._tcp.${DOMAIN},${PRIVATE_IP},3142
 no-resolv

@@ -3,7 +3,7 @@
 ---
 - name: Setup geproxy
   gather_facts: true
-  hosts: all
+  hosts: localhost
   vars_files:
     - defaults.yaml
     - config.yml
@@ -14,21 +14,6 @@
       ansible.builtin.service:
         name: systemd-resolved
         state: restarted
-
-    - name: Create mountpoint
-      become: no
-      ansible.builtin.file:
-        state: directory
-        path: /opt/geproxy/pxe/ubuntu
-      notify: Mount the ISO
-
-    - name: Mount the ISO
-      ansible.posix.mount:
-        path: /opt/geproxy/pxe/ubuntu
-        src: /opt/geproxy/pxe/ubuntu.iso
-        fstype: iso9660
-        opts: ro
-        state: mounted # Ensure that this is made permanent in /etc/fstab
 
   tasks:
   - name: Check if already installed
@@ -43,12 +28,6 @@
       chdir: /opt/geproxy
       cmd: docker compose down --rmi=local
     when: geproxy.stat.exists
-
-  - name: Unmount Ubuntu
-    tags: never, clean
-    ansible.posix.mount:
-      path: /opt/geproxy/pxe/ubuntu
-      state: unmounted # Ensure that this is made permanent in /etc/fstab
 
   - name: Remove files
     tags: never, clean
@@ -142,20 +121,12 @@
       owner: no
       group: no
 
-  - name: Ensure `./acng/` exists
-    tags: always
-    ansible.builtin.file:
-      path: /opt/geproxy/acng
-      state: directory
-
-
   - name: Fill .env
     tags: always
     become: no
     ansible.builtin.template:
       src: env.j2
       dest: /opt/geproxy/.env
-
 
   - name: Check if /etc/netplan/99-geproxy.yaml exists
     ansible.builtin.stat:
@@ -218,72 +189,6 @@
       line: DNSStubListener=no
     notify:
       - Restart systemd-resolved
-
-  - name: Download ubuntu
-    become: no
-    ansible.builtin.get_url:
-      url: https://releases.ubuntu.com/24.04/ubuntu-24.04-live-server-amd64.iso
-      dest: /opt/geproxy/pxe/ubuntu.iso
-    notify: Create mountpoint
-
-  - name: Check for submodule ipxe
-    tags: ipxe
-    become: no
-    ansible.builtin.stat:
-      path: /opt/geproxy/ipxe/src
-    register: ipxeFound
-
-  - name: Initialise submodule ipxe
-    tags: ipxe
-    become: no
-    ansible.builtin.command:
-      chdir: /opt/geproxy/
-      cmd: "git submodule update --init --recursive ipxe"
-    when: not ipxeFound.stat.exists
-
-  - name: "Clean iPXE files '{{ item }}'"
-    become: no
-    tags: never, ipxe
-    ansible.builtin.file:
-      path: '{{ item }}'
-      state: absent
-    with_items:
-      - /opt/geproxy/pxe/undionly.kpxe
-      - /opt/geproxy/ipxe/src/bin/undionly.kpxe
-      - /opt/geproxy/pxe/embed.ipxe
-
-  - name: Generate bootloader
-    tags: ipxe
-    become: no
-    block:
-    - name: Check for built bootloader
-      ansible.builtin.stat:
-        path: /opt/geproxy/pxe/undionly.kpxe
-      register: ipxeBuilt
-
-    - name: Generate bootloader script embed.ipxe
-      ansible.builtin.shell:
-        chdir: /opt/geproxy/pxe
-        cmd: |
-          set -a
-          source ../.env
-          set +a
-          
-          envsubst '$PRIVATE_IP' < embed.ipxe.template > embed.ipxe
-      when: not ipxeBuilt.stat.exists
-
-    - name: Generate bootloader
-      ansible.builtin.command:
-        chdir: /opt/geproxy/ipxe/src
-        cmd: make clean bin/undionly.kpxe EMBED=/opt/geproxy/pxe/embed.ipxe
-      when: not ipxeBuilt.stat.exists
-
-    - name: Copy bootloader to location
-      ansible.builtin.copy:
-        src: /opt/geproxy/ipxe/src/bin/undionly.kpxe
-        dest: /opt/geproxy/pxe
-        remote_src: yes
-      when: not ipxeBuilt.stat.exists
 
   - name: "Build the composition"
     tags: start, restart
