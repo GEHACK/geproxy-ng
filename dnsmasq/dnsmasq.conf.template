@@ -23,11 +23,11 @@ enable-tftp
 tftp-root=/pxe
 address=/judge.${DOMAIN}/${PRIVATE_IP}
 address=/docs.${DOMAIN}/${PRIVATE_IP}
-address=/_gateway.${DOMAIN}/${PRIVATE_IP}
+# address=/_gateway.${DOMAIN}/${PRIVATE_IP}
 address=/judge/${PRIVATE_IP}
 address=/docs/${PRIVATE_IP}
-address=/_gateway/${PRIVATE_IP}
+# address=/_gateway/${PRIVATE_IP}
 
 server=${DNS_RESOLVER}
 
-no-resolv
+no-resolv #This blocks network traffic

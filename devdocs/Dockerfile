@@ -15,7 +15,7 @@ RUN git checkout dc3ad6e4d44f47417b72c7cda33c5308cd67f93f
 RUN bundle install --system && \
     rm -rf ~/.gem /root/.bundle/cache /usr/local/bundle/cache
 
-ENV LANGUAGES='openjdk@18 c cpp python@3.10'
+ENV LANGUAGES='openjdk@21 c cpp python@3.10 kotlin'
 
 EXPOSE 9292
 
