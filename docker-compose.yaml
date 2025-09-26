@@ -8,25 +8,37 @@ services:
     ports:
       - "${PRIVATE_IP:-10.1.0.1}:80:80"
       - "${PRIVATE_IP:-10.1.0.1}:443:443"
-    depends_on:
-      devdocs:
-        condition: service_started
+        #depends_on:
+        #  devdocs:
+        #    condition: service_started
     environment:
       - CCS_HOST=${CCS_HOST:-https://judge.gehack.nl}
       - CONTEST_HASH=${CONTEST_HASH:-contest_hash}
       - SSL_CERT_LOC=${SSL_CERT_LOC:-}
       - SSL_KEY_LOC=${SSL_KEY_LOC:-}
-      - DOMAIN=${DOMAIN:-progcont}
+      - DOMAIN=gehack.nl
+    restart: unless-stopped
     cap_add:
       - NET_ADMIN
 
-  devdocs:
-    image: geproxy/devdocs
-    build:
-      dockerfile: ./Dockerfile
-      context: ./devdocs
-    environment:
-      - LANGUAGES="${LANGUAGES:-'openjdk@17 c cpp python@3.10'}"
+#  squid:
+#    image: luukblankenstijn/squid:latest
+#    network_mode: host
+#    cap_add:
+#      - NET_ADMIN
+#      - NET_BIND_SERVICE
+#      - NET_RAW
+#      - SETPCAP 
+#    volumes:
+#      - ./squid/squid.conf:/etc/squid/squid.conf:ro
+#      - ./squid/certs:/etc/squid/certs:ro
+#      - ./squid/allowlist.txt:/etc/squid/allowlist.txt:ro
+#      - squid-cache:/var/cache/squid
+#      - squid-logs:/var/log/squid
+#    restart: unless-stopped
+#    command: ["/usr/sbin/squid", "-N", "-d", "1"]
+
+   
 
   dnsmasq:
     image: geproxy/dnsmasq
@@ -36,16 +48,13 @@ services:
       dockerfile: ./Dockerfile
       context: ./dnsmasq
     network_mode: host
-    environment:
-      - PRIVATE_IP=${PRIVATE_IP:-10.1.0.1}
-      - PRIVATE_INTERFACE=${PRIVATE_INTERFACE:-lo}
-      - SUBNET_START=${SUBNET_START:-10.1.0.100}
-      - SUBNET_END=${SUBNET_END:-10.1.255.255}
-      - SUBNET_NETMASK=${SUBNET_NETMASK:-255.255.0.0}
-      - DOMAIN=${DOMAIN:-progcont}
-      - DNS_RESOLVER=${DNS_RESOLVER:-1.1.1.1}
-      - STATIC_LEASES=${STATIC_LEASES:-}
+    restart: unless-stopped
+    env_file:
+      - .env
     volumes:
       - ./dnsmasq/dnsmasq.conf.template:/etc/dnsmasq.conf.template
       - ./dnsmasq/dnsmasq.leases:/var/lib/misc/dnsmasq.leases
 
+volumes:
+  squid-cache:
+  squid-logs:

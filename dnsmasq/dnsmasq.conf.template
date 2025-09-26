@@ -1,33 +1,46 @@
 log-queries
 log-dhcp
 log-facility=/dev/stdout
-
-interface=${PRIVATE_INTERFACE}
-listen-address=${PRIVATE_IP}
-domain=${DOMAIN}
-
-dhcp-range=${PRIVATE_INTERFACE},${SUBNET_START},${SUBNET_END},${SUBNET_NETMASK},infinite
-dhcp-option=${PRIVATE_INTERFACE},option:router,${PRIVATE_IP}
-
-# dhcp-host=ac:16:2d:37:cb:c5,10.1.0.10,0
-# dhcp-host=b0:0c:d1:de:f0:0d,10.1.0.11,0
-${STATIC_LEASES}
-
-dhcp-authoritative
-dhcp-option=${PRIVATE_INTERFACE},42,${PRIVATE_IP}
-dhcp-option=${PRIVATE_INTERFACE},6,${PRIVATE_IP}
-
-#dhcp-option=93,16
-enable-tftp
-
-tftp-root=/pxe
-address=/judge.${DOMAIN}/${PRIVATE_IP}
-address=/docs.${DOMAIN}/${PRIVATE_IP}
-# address=/_gateway.${DOMAIN}/${PRIVATE_IP}
-address=/judge/${PRIVATE_IP}
-address=/docs/${PRIVATE_IP}
-# address=/_gateway/${PRIVATE_IP}
-
+domain-needed
+bogus-priv
+bind-interfaces
+except-interface=${WAN_INTERFACE}
 server=${DNS_RESOLVER}
 
-no-resolv #This blocks network traffic
+dhcp-match=set:bios,60,PXEClient:Arch:00000
+dhcp-boot=tag:bios,undionly.kpxe,${FOG_IP},${FOG_IP}        
+
+dhcp-match=set:efi32,60,PXEClient:Arch:00006
+dhcp-boot=tag:efi32,i386-efi/ipxe.efi,${FOG_IP},${FOG_IP}   
+
+dhcp-match=set:efibc,60,PXEClient:Arch:00007
+dhcp-boot=tag:efibc,ipxe.efi,${FOG_IP},${FOG_IP}            
+
+dhcp-match=set:efi64,60,PXEClient:Arch:00009
+dhcp-boot=tag:efi64,ipxe.efi,${FOG_IP},${FOG_IP} 
+
+##### Private LAN (br-tree) #####
+interface=${PRIVATE_INTERFACE}
+listen-address=${PRIVATE_IP}
+domain=${PRIVATE_DOMAIN},${PRIVATE_INTERFACE}
+dhcp-range=${PRIVATE_INTERFACE},${PRIVATE_SUBNET_START},${PRIVATE_SUBNET_END},${PRIVATE_SUBNET_NETMASK},infinite
+dhcp-option=${PRIVATE_INTERFACE},3,${PRIVATE_IP}
+dhcp-option=${PRIVATE_INTERFACE},6,${PRIVATE_IP}
+dhcp-option=${PRIVATE_INTERFACE},42,${PRIVATE_IP}
+
+address=/judge.${PRICATE_DOMAIN}/${PRIVATE_IP}
+address=/judge/${PRIVATE_IP}
+# address=/docs.progcont/${PRIVATE_IP}
+# address=/docs/${PRIVATE_IP}
+
+##### Admin LAN (br-admin) #####
+interface=${ADMIN_INTERFACE}
+listen-address=${ADMIN_IP}
+domain=${ADMIN_DOMAIN},${ADMIN_INTERFACE}
+dhcp-range=${ADMIN_INTERFACE},${ADMIN_SUBNET_START},${ADMIN_SUBNET_END},${ADMIN_SUBNET_NETMASK},infinite
+dhcp-option=${ADMIN_INTERFACE},3,${ADMIN_IP}
+dhcp-option=${ADMIN_INTERFACE},6,${ADMIN_IP}
+dhcp-option=${ADMIN_INTERFACE},42,${ADMIN_IP}
+
+dhcp-authoritative
+${STATIC_LEASES}
