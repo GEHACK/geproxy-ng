@@ -1,0 +1,56 @@
+tls:
+  certificates:
+    - certFile: /etc/traefik/certs/judge.${DOMAIN}.crt
+      keyFile:  /etc/traefik/certs/judge.${DOMAIN}.key
+
+serversTransports:
+  judge-upstream-tls:
+    serverName: judge.${DOMAIN}
+
+http:
+  middlewares:
+    https-redirect:
+      redirectScheme: { scheme: https, permanent: true }
+    to-canonical-judge:
+      redirectRegex:
+        regex: "^https?://judge(?::\\d+)?(.*)$"
+        replacement: "https://judge.${DOMAIN}$1"
+        permanent: true
+
+  routers:
+    judge-redirect-http:
+      entryPoints: [web]
+      rule: Host(`judge`) || Host(`judge.${DOMAIN}`)
+      middlewares: [to-canonical-judge]
+      service: noop@internal
+      priority: 100
+
+    judge-redirect-https:
+      entryPoints: [websecure]
+      rule: Host(`judge`) || Host(`judge.${DOMAIN}`)
+      tls: {}
+      middlewares: [to-canonical-judge]
+      service: noop@internal
+      priority: 100
+
+    judge-canonical:
+      entryPoints: [websecure]
+      rule: Host(`judge.gehack.nl`)
+      tls: {}
+      service: judge-svc
+      priority: 90
+
+    http-catchall:
+      entryPoints: [web]
+      rule: HostRegexp(`{host:.+}`)
+      middlewares: [https-redirect]
+      service: noop@internal
+      priority: 1
+
+  services:
+    judge-svc:
+      loadBalancer:
+        serversTransport: judge-upstream-tls
+        passHostHeader: true
+        servers:
+          - url: "https://judge.${DOMAIN}"  # your upstream

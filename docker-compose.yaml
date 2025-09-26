@@ -1,25 +1,43 @@
 services:
-  nginx:
-    image: nginx:latest
-    volumes:
-      - ./nginx/configure.sh:/docker-entrypoint.d/99-geproxy-config.sh
-      - ./nginx/conf.d:/etc/nginx/templates
-      - ./nginx/ssl:/etc/nginx/ssl
-    ports:
-      - "${PRIVATE_IP:-10.1.0.1}:80:80"
-      - "${PRIVATE_IP:-10.1.0.1}:443:443"
-        #depends_on:
-        #  devdocs:
-        #    condition: service_started
-    environment:
-      - CCS_HOST=${CCS_HOST:-https://judge.gehack.nl}
-      - CONTEST_HASH=${CONTEST_HASH:-contest_hash}
-      - SSL_CERT_LOC=${SSL_CERT_LOC:-}
-      - SSL_KEY_LOC=${SSL_KEY_LOC:-}
-      - DOMAIN=gehack.nl
+  traefik:
+    build:
+      context: ./traefik
+    container_name: traefik
     restart: unless-stopped
-    cap_add:
-      - NET_ADMIN
+    command:
+      - --providers.file.filename=/etc/traefik/dynamic.yaml
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+    ports:
+      - "${PRIVATE_IP}:80:80"
+      - "${PRIVATE_IP}:443:443"
+    volumes:
+      - ./traefik/traefik.yaml:/etc/traefik/traefik.yaml:ro
+      - ./traefik/dynamic.yaml:/etc/traefik/dynamic.yaml:ro
+      - ./traefik/certs:/etc/traefik/certs:ro
+    env_file:
+      - .env
+  # nginx:
+  #   image: nginx:latest
+  #   volumes:
+  #     - ./nginx/configure.sh:/docker-entrypoint.d/99-geproxy-config.sh
+  #     - ./nginx/conf.d:/etc/nginx/templates
+  #     - ./nginx/ssl:/etc/nginx/ssl
+  #   ports:
+  #     - "${PRIVATE_IP:-10.1.0.1}:80:80"
+  #     - "${PRIVATE_IP:-10.1.0.1}:443:443"
+  #       #depends_on:
+  #       #  devdocs:
+  #       #    condition: service_started
+  #   environment:
+  #     - CCS_HOST=${CCS_HOST:-https://judge.gehack.nl}
+  #     - CONTEST_HASH=${CONTEST_HASH:-contest_hash}
+  #     - SSL_CERT_LOC=${SSL_CERT_LOC:-}
+  #     - SSL_KEY_LOC=${SSL_KEY_LOC:-}
+  #     - DOMAIN=gehack.nl
+  #   restart: unless-stopped
+  #   cap_add:
+  #     - NET_ADMIN
 
 #  squid:
 #    image: luukblankenstijn/squid:latest
